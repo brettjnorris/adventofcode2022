@@ -4,14 +4,13 @@ pub fn part_one(input: &str) -> Option<u32> {
         .map(|group| {
             group
                 .split("\n")
-                .map(|val| {
-                    match val.parse::<u32>() {
-                        Ok(v) => v,
-                        Err(e) => 0
-                    }
-                } )
+                .map(|val| match val.parse::<u32>() {
+                    Ok(v) => v,
+                    Err(_) => 0,
+                })
                 .sum()
-        }).max()
+        })
+        .max()
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
@@ -20,12 +19,10 @@ pub fn part_two(input: &str) -> Option<u32> {
         .map(|group| {
             group
                 .split("\n")
-                .map(|val| {
-                    match val.parse::<u32>() {
-                        Ok(v) => v,
-                        Err(e) => 0
-                    }
-                } )
+                .map(|val| match val.parse::<u32>() {
+                    Ok(v) => v,
+                    Err(_) => 0,
+                })
                 .sum()
         })
         .collect::<Vec<u32>>();
