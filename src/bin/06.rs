@@ -1,30 +1,71 @@
-use itertools::Itertools;
+struct FrequencyTable {
+    table: [u8; 26],
+    duplicate_count: u8
+}
 
-fn find_marker(input: &str, sequence_size: u32) -> Option<u32> {
-    let mut end_index: u32 = 0;
-    let mut windows = input
-        .as_bytes()
-        .windows(sequence_size as usize)
-        .enumerate();
-
-    loop {
-        let (i, chars) = windows.next().unwrap();
-
-        if chars.into_iter().unique().count() == (sequence_size as usize) {
-            end_index = (i as u32) + sequence_size;
-            break;
+impl FrequencyTable {
+    fn new() -> FrequencyTable {
+        FrequencyTable {
+            table: [0; 26],
+            duplicate_count: 0
         }
     }
 
-    Some(end_index)
+    fn increment(&mut self, index: usize) {
+        self.table[index] = self.table[index] + 1;
+
+        if self.table[index] == 2 {
+            self.duplicate_count = self.duplicate_count + 1;
+        }
+    }
+
+    fn decrement(&mut self, index: usize) {
+        self.table[index] = self.table[index] - 1;
+
+        if self.table[index] == 1 {
+            self.duplicate_count = self.duplicate_count - 1;
+        }
+
+    }
+}
+
+fn find_marker_improved(input: &str, sequence_size: u32) -> Option<u32> {
+    let mut frequency_table = FrequencyTable::new();
+
+    let mut index: usize = 0;
+    let mut window: Vec<u8> = vec![];
+
+    let input_slice = input.as_bytes();
+
+    loop {
+        let char = input_slice[index];
+
+        window.push(char);
+        frequency_table.increment((usize::from(char)) % 26);
+
+        if window.len() > sequence_size as usize {
+            let first = window[0];
+            window = window[1..].to_vec();
+
+            frequency_table.decrement((usize::from(first)) % 26);
+
+            if frequency_table.duplicate_count == 0 {
+                break;
+            }
+        }
+
+        index = index + 1;
+    }
+
+    Some(index as u32)
 }
 
 pub fn part_one(input: &str) -> Option<u32> {
-    find_marker(&input, 4)
+    find_marker_improved(&input, 4)
 }
 
 pub fn part_two(input: &str) -> Option<u32> {
-    find_marker(&input, 14)
+    find_marker_improved(&input, 14)
 }
 
 fn main() {
