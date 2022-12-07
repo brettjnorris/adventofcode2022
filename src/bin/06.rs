@@ -57,7 +57,7 @@ fn find_marker_improved(input: &str, sequence_size: u32) -> Option<u32> {
         index = index + 1;
     }
 
-    Some(index as u32)
+    Some((index as u32) + 1)
 }
 
 pub fn part_one(input: &str) -> Option<u32> {
