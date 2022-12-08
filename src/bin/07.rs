@@ -1,39 +1,36 @@
 #[derive(Clone)]
 enum FileType {
     File,
-    Directory
+    Directory,
 }
 
 enum CommandType {
     CD,
     List,
-    Unknown
+    Unknown,
 }
 
 struct Command {
     command_type: CommandType,
-    target: Option<String>
+    target: Option<String>,
 }
 
 impl Command {
     fn from_string(input: &str) -> Command {
         let parts = input.split_whitespace().collect::<Vec<&str>>();
         match parts[1] {
-            "cd" => {
-                Command {
-                    command_type: CommandType::CD,
-                    target: Some(parts[2].to_string())
-                }
+            "cd" => Command {
+                command_type: CommandType::CD,
+                target: Some(parts[2].to_string()),
             },
-            "ls" => {
-                Command {
-                    command_type: CommandType::List,
-                    target: None
-                }
+            "ls" => Command {
+                command_type: CommandType::List,
+                target: None,
             },
-            _ => {
-                Command { command_type: CommandType::Unknown, target: None }
-            }
+            _ => Command {
+                command_type: CommandType::Unknown,
+                target: None,
+            },
         }
     }
 }
@@ -42,7 +39,7 @@ impl Command {
 struct File {
     file_type: FileType,
     path: String,
-    size: Option<u32>
+    size: Option<u32>,
 }
 
 impl File {
@@ -51,21 +48,17 @@ impl File {
 
         if parts[0] != "dir" {
             let path = format!("{}{}", current_path, parts[1]);
-            Some(
-                File {
-                    path,
-                    file_type: FileType::File,
-                    size: Some(parts[0].parse::<u32>().unwrap())
-                }
-            )
+            Some(File {
+                path,
+                file_type: FileType::File,
+                size: Some(parts[0].parse::<u32>().unwrap()),
+            })
         } else {
-            Some(
-                File {
-                    path: File::parse_directory(current_path.to_string(), parts[1]),
-                    file_type: FileType::Directory,
-                    size: None
-                }
-            )
+            Some(File {
+                path: File::parse_directory(current_path.to_string(), parts[1]),
+                file_type: FileType::Directory,
+                size: None,
+            })
         }
     }
 
@@ -74,7 +67,7 @@ impl File {
             ".." => {
                 let parts: Vec<&str> = current_path.split("/").collect();
                 parts[..(parts.len() - 1)].join("/")
-            },
+            }
             _ => {
                 format!("{}{}", current_path, target)
             }
@@ -86,8 +79,8 @@ fn calculate_directory_size(directory: File, files: Vec<File>) -> u32 {
     files
         .clone()
         .into_iter()
-        .filter(|f| f.path.starts_with(&directory.path[..]) )
-        .map(|f| f.size.unwrap_or_else(|| { 0 }) )
+        .filter(|f| f.path.starts_with(&directory.path[..]))
+        .map(|f| f.size.unwrap_or_else(|| 0))
         .sum::<u32>()
 }
 
@@ -104,13 +97,9 @@ fn change_directory(current_directory: &str, command: Command) -> String {
                 } else {
                     format!("{}/", current_directory)
                 }
-
             }
-
-        },
-        _ => {
-            current_directory.to_string()
         }
+        _ => current_directory.to_string(),
     }
 }
 
@@ -119,7 +108,7 @@ fn parse_files(input: &str) -> Vec<File> {
     let root = File {
         path: "/".to_string(),
         file_type: FileType::Directory,
-        size: None
+        size: None,
     };
     let mut files: Vec<File> = vec![root];
 
@@ -145,19 +134,17 @@ fn cumulative_directory_size_by_max_size(files: Vec<File>, max_size: u32) -> u32
         .into_iter()
         .filter_map(|f| {
             let is_directory = match f.file_type {
-                FileType::Directory => { true },
-                _ => { false }
+                FileType::Directory => true,
+                _ => false,
             };
 
             match is_directory {
-                false => { None },
+                false => None,
                 true => {
                     let directory_size = calculate_directory_size(f, inner_files.clone());
                     match directory_size > max_size {
-                        true => {
-                            None
-                        },
-                        false => { Some(directory_size) }
+                        true => None,
+                        false => Some(directory_size),
                     }
                 }
             }
@@ -170,13 +157,9 @@ fn directories_by_size(files: Vec<File>) -> Vec<u32> {
 
     let mut sizes = files
         .into_iter()
-        .filter_map(|file| {
-             match file.file_type {
-                FileType::Directory => {
-                    Some(calculate_directory_size(file, inner_files.clone()))
-                },
-                _ => { None }
-            }
+        .filter_map(|file| match file.file_type {
+            FileType::Directory => Some(calculate_directory_size(file, inner_files.clone())),
+            _ => None,
         })
         .collect::<Vec<u32>>();
 
@@ -201,9 +184,7 @@ pub fn part_two(input: &str) -> Option<u32> {
 
     let directory = sizes
         .into_iter()
-        .find(|size| {
-            unused_space + size > required_free_space
-        })
+        .find(|size| unused_space + size > required_free_space)
         .unwrap();
 
     Some(directory)

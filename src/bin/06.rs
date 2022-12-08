@@ -1,13 +1,13 @@
 struct FrequencyTable {
     table: [u8; 26],
-    duplicate_count: u8
+    duplicate_count: u8,
 }
 
 impl FrequencyTable {
     fn new() -> FrequencyTable {
         FrequencyTable {
             table: [0; 26],
-            duplicate_count: 0
+            duplicate_count: 0,
         }
     }
 
@@ -25,7 +25,6 @@ impl FrequencyTable {
         if self.table[index] == 1 {
             self.duplicate_count = self.duplicate_count - 1;
         }
-
     }
 }
 
