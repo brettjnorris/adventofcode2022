@@ -34,8 +34,6 @@ impl CPU {
             .rev()
             .collect::<Vec<Instruction>>();
 
-        println!("{:?}", &instructions);
-
         CPU {
             instructions,
             next_instruction: None,
@@ -68,10 +66,7 @@ impl CPU {
     fn draw_pixel(&self) -> bool {
         let range = ((self.register_x - 1)..=(self.register_x + 1));
 
-        let contains = range.contains(&((self.counter - 1) as i32 % 40));
-        println!("{:?}, {}, contains: {}", range, self.counter, contains);
-
-        contains
+        range.contains(&((self.counter - 1) as i32 % 40))
     }
 }
 
@@ -81,12 +76,10 @@ pub fn part_one(input: &str) -> Option<u32> {
 
     loop {
         cpu.tick();
-        println!("counter: {:?}, delay: {:?}, register_x: {:?}, next_instruction: {:?}", cpu.counter, cpu.delay, cpu.register_x, cpu.next_instruction);
 
         match cpu.counter {
             20 | 60 | 100 | 140 | 180 | 220 => {
                 let score = cpu.counter as i32 * cpu.register_x;
-                println!("score: {}", score);
                 signal_strength += score;
             },
             _ => ()
@@ -106,15 +99,11 @@ pub fn part_two(input: &str) -> Option<String> {
     loop {
         cpu.tick();
 
-        println!("counter: {:?}, delay: {:?}, register_x: {:?}, next_instruction: {:?}", cpu.counter, cpu.delay, cpu.register_x, cpu.next_instruction);
-
         if cpu.draw_pixel() {
             output.push("#");
         } else {
             output.push(".");
         }
-
-        println!("{:?}", output.join(""));
 
         if cpu.next_instruction.is_none() {
             break;
@@ -129,7 +118,6 @@ pub fn part_two(input: &str) -> Option<String> {
         .collect::<Vec<String>>()
         .join("\n");
 
-    println!("{}", printed);
     Some(printed)
 }
 
