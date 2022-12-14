@@ -3,16 +3,14 @@ use std::ops::Range;
 #[derive(Debug)]
 enum Instruction {
     Add(i32),
-    Noop
+    Noop,
 }
 
 fn parse_instruction(input: &str) -> Instruction {
     let parts = input.split_whitespace().collect::<Vec<&str>>();
     match parts[0] {
-        "addx" => {
-            Instruction::Add(parts[1].parse::<i32>().unwrap())
-        },
-        _ => Instruction::Noop
+        "addx" => Instruction::Add(parts[1].parse::<i32>().unwrap()),
+        _ => Instruction::Noop,
     }
 }
 
@@ -21,16 +19,14 @@ struct CPU {
     register_x: i32,
     delay: u32,
     instructions: Vec<Instruction>,
-    next_instruction: Option<Instruction>
+    next_instruction: Option<Instruction>,
 }
 
 impl CPU {
     fn from_input(input: &str) -> CPU {
         let instructions = input
             .lines()
-            .map(|line| {
-                parse_instruction(line)
-            })
+            .map(|line| parse_instruction(line))
             .rev()
             .collect::<Vec<Instruction>>();
 
@@ -48,8 +44,8 @@ impl CPU {
 
         // Apply last instruction
         if self.delay == 0 {
-            if let Some(Instruction::Add(val)) =  self.next_instruction {
-                 self.register_x += val;
+            if let Some(Instruction::Add(val)) = self.next_instruction {
+                self.register_x += val;
             }
 
             let instruction = self.instructions.pop();
@@ -81,8 +77,8 @@ pub fn part_one(input: &str) -> Option<u32> {
             20 | 60 | 100 | 140 | 180 | 220 => {
                 let score = cpu.counter as i32 * cpu.register_x;
                 signal_strength += score;
-            },
-            _ => ()
+            }
+            _ => (),
         }
 
         if cpu.next_instruction.is_none() {
@@ -112,9 +108,7 @@ pub fn part_two(input: &str) -> Option<String> {
 
     let printed = output
         .chunks(40)
-        .map(|chunk| {
-            chunk.join("")
-        })
+        .map(|chunk| chunk.join(""))
         .collect::<Vec<String>>()
         .join("\n");
 
