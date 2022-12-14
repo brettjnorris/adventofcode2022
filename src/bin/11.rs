@@ -1,56 +1,38 @@
-use std::collections::HashSet;
-use itertools::Itertools;
+use num::Integer;
 use regex::Regex;
-use lazy_static::lazy_static;
 
 #[derive(Debug, Clone)]
 struct Monkey {
-    id: u32,
-    counter: u32,
+    counter: u128,
     items: Vec<u128>,
     operation: Operation,
     test: Test,
     if_true: ActionType,
-    if_false: ActionType
+    if_false: ActionType,
 }
 
 impl Monkey {
     fn from_input(input: &str) -> Monkey {
         let lines = input.split("\n").collect::<Vec<&str>>();
 
-        let items = Monkey::parse_starting_items(lines[1]);
         Monkey {
-            id: Monkey::parse_id(lines[0]),
             counter: 0,
             items: Monkey::parse_starting_items(lines[1]),
             operation: Monkey::parse_operation(lines[2]).unwrap(),
             test: Monkey::parse_test(lines[3]),
             if_true: Monkey::parse_action_type(lines[4]),
-            if_false: Monkey::parse_action_type(lines[5])
+            if_false: Monkey::parse_action_type(lines[5]),
         }
-    }
-
-    fn parse_id(line: &str) -> u32 {
-        let re = Regex::new(r"^Monkey (\d+):$").unwrap();
-        let captures = re.captures(line).unwrap();
-
-        captures
-            .get(1)
-            .map_or("", |m| m.as_str())
-            .parse::<u32>()
-            .unwrap()
     }
 
     fn parse_starting_items(line: &str) -> Vec<u128> {
         let parts: Vec<&str> = line.split("Starting items: ").collect();
         parts[1]
             .split(", ")
-            .filter_map(|elem|
-                match elem.parse::<u128>() {
-                    Ok(val) => Some(val),
-                    _ => None
-                }
-            )
+            .filter_map(|elem| match elem.parse::<u128>() {
+                Ok(val) => Some(val),
+                _ => None,
+            })
             .collect::<Vec<u128>>()
     }
 
@@ -62,9 +44,9 @@ impl Monkey {
 
         match (operator, operand) {
             ("*", Ok(operand)) => Some(Operation::MultiplyBy(operand)),
-            ("*", Err(e)) => Some(Operation::Double),
+            ("*", Err(_)) => Some(Operation::Double),
             ("+", Ok(operand)) => Some(Operation::AddTo(operand)),
-            (_, _) => None
+            (_, _) => None,
         }
     }
 
@@ -87,45 +69,45 @@ impl Monkey {
         ActionType::ThrowTo(operand)
     }
 
-    fn inspect_items(&mut self, divide_worry: bool) -> Vec<Action> {
+    fn inspect_items(&mut self, divide_worry: bool, lcm: u32) -> Vec<Action> {
         let items = self.items.clone();
         self.items = vec![];
-        self.counter += items.len() as u32;
+        self.counter += items.len() as u128;
 
-        items.into_iter().map(|item| self.inspect_item(item, divide_worry)).collect()
+        items
+            .into_iter()
+            .map(|item| self.inspect_item(item, divide_worry, lcm))
+            .collect()
     }
 
-    fn inspect_item(&self, item: u128, divide_worry: bool) -> Action {
+    fn inspect_item(&self, item: u128, divide_worry: bool, lcm: u32) -> Action {
         let mut worry_level: u128 = item;
+
         match self.operation {
-            Operation::AddTo(val) => {
-                worry_level += (val as u128)
-            },
-            Operation::Double => {
-                worry_level = worry_level * worry_level
-            },
-            Operation::MultiplyBy(val) => {
-                worry_level = worry_level * (val as u128)
-            }
-            _ => {}
+            Operation::AddTo(val) => worry_level += val as u128,
+            Operation::Double => worry_level = worry_level * worry_level,
+            Operation::MultiplyBy(val) => worry_level = worry_level * (val as u128),
         }
 
         if divide_worry {
             worry_level = worry_level / 3;
+        } else {
+            worry_level %= lcm as u128
         }
 
         let test_result = match self.test {
-            Test::DivisibleBy(val) => {
-                worry_level % (val as u128) == 0
-            }
+            Test::DivisibleBy(val) => worry_level % (val as u128) == 0,
         };
 
         let action_type = match test_result {
             true => self.if_true.clone(),
-            false => self.if_false.clone()
+            false => self.if_false.clone(),
         };
 
-        Action { action_type, val: worry_level }
+        Action {
+            action_type,
+            val: worry_level,
+        }
     }
 
     fn add_item(&mut self, item: u128) {
@@ -135,20 +117,19 @@ impl Monkey {
 
 #[derive(Clone, Debug)]
 enum Test {
-    DivisibleBy(u32)
+    DivisibleBy(u32),
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 enum ActionType {
     ThrowTo(u32),
-    ThrowFrom(u32)
 }
 
 #[derive(Clone, Debug)]
 enum Operation {
     AddTo(u32),
     MultiplyBy(u32),
-    Double
+    Double,
 }
 
 #[derive(Clone, Debug)]
@@ -161,33 +142,32 @@ fn parse_monkeys(input: &str) -> Vec<Monkey> {
     input
         .split("\n\n")
         .into_iter()
-        .map(|chunk| {
-            Monkey::from_input(chunk)
-        })
+        .map(|chunk| Monkey::from_input(chunk))
         .collect::<Vec<Monkey>>()
 }
 
-fn simulate_monkeys(monkeys: &mut Vec<Monkey>, num_rounds: usize, divide_worry: bool) -> Option<u32> {
-    for i in 0..num_rounds {
+fn simulate_monkeys(
+    monkeys: &mut Vec<Monkey>,
+    num_rounds: usize,
+    divide_worry: bool,
+    lcm: u32,
+) -> Option<u128> {
+    for _i in 0..num_rounds {
         for j in 0..monkeys.len() {
             let monkey = &mut monkeys[j];
-            let actions = monkey.inspect_items(true);
+            let actions = monkey.inspect_items(divide_worry, lcm);
 
             for action in actions {
-                if let ActionType::ThrowTo(id) = action.action_type {
-                    let monkey = &mut monkeys[id as usize];
+                let ActionType::ThrowTo(id) = action.action_type;
+                let item = action.val.clone();
+                let monkey = &mut monkeys[id as usize];
 
-                    let item = action.val.clone();
-                    monkey.add_item(item);
-                }
-
+                monkey.add_item(item);
             }
         }
     }
 
-
-    monkeys
-        .sort_by(|a, b| b.counter.cmp(&a.counter));
+    monkeys.sort_by(|a, b| b.counter.cmp(&a.counter));
 
     monkeys
         .into_iter()
@@ -196,16 +176,28 @@ fn simulate_monkeys(monkeys: &mut Vec<Monkey>, num_rounds: usize, divide_worry: 
         .reduce(|accum, item| accum * item)
 }
 
-pub fn part_one(input: &str) -> Option<u32> {
-    let mut monkeys = parse_monkeys(input);
-
-    simulate_monkeys(&mut monkeys, 20, true)
+fn get_monkey_lcm(monkeys: &Vec<Monkey>) -> u32 {
+    monkeys
+        .iter()
+        .map(|monkey| match monkey.test {
+            Test::DivisibleBy(val) => val,
+        })
+        .reduce(|accum, item| accum.lcm(&item))
+        .unwrap()
 }
 
-pub fn part_two(input: &str) -> Option<u32> {
+pub fn part_one(input: &str) -> Option<u128> {
     let mut monkeys = parse_monkeys(input);
+    let lcm = get_monkey_lcm(&monkeys);
 
-    simulate_monkeys(&mut monkeys, 1000, false)
+    simulate_monkeys(&mut monkeys, 20, true, lcm)
+}
+
+pub fn part_two(input: &str) -> Option<u128> {
+    let mut monkeys = parse_monkeys(input);
+    let lcm = get_monkey_lcm(&monkeys);
+
+    simulate_monkeys(&mut monkeys, 10000, false, lcm)
 }
 
 fn main() {
@@ -239,10 +231,10 @@ mod tests {
             operation: Operation::MultiplyBy(19),
             test: Test::DivisibleBy(23),
             if_true: ActionType::ThrowTo(2),
-            if_false: ActionType::ThrowTo(3)
+            if_false: ActionType::ThrowTo(3),
         };
 
-        let action = monkey.inspect_item(79, true);
+        let action = monkey.inspect_item(79, true, 501);
         assert_eq!(action.action_type, ActionType::ThrowTo(3));
         assert_eq!(action.val, 500);
     }
